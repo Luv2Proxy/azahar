@@ -27,6 +27,12 @@ endif()
 
 option(ENABLE_LIBRETRO "Build as a LibRetro core" OFF)
 
+if(EMSCRIPTEN)
+    message(STATUS "Configuring for WebAssembly (Emscripten)")
+    # Web builds currently target the libretro core only.
+    set(ENABLE_LIBRETRO ON CACHE BOOL "Build as a LibRetro core" FORCE)
+endif()
+
 # Some submodules like to pick their own default build type if not specified.
 # Make sure we default to Release build type always, unless the generator has custom types.
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -154,17 +160,33 @@ if(ENABLE_LIBRETRO)
         endif()
     endforeach()
 
-    if(_CONFLICTS)
+    if(_CONFLICTS AND NOT EMSCRIPTEN)
         string(REPLACE ";" ", " _CONFLICTS_STR "${_CONFLICTS}")
         message(FATAL_ERROR
             "ENABLE_LIBRETRO is incompatible with: ${_CONFLICTS_STR}\n"
             "These options were explicitly enabled but are not supported for libretro builds.\n"
             "Remove these options or set them to OFF.")
+    elseif(_CONFLICTS)
+        string(REPLACE ";" ", " _CONFLICTS_STR "${_CONFLICTS}")
+        message(WARNING
+            "Ignoring explicitly enabled options for Emscripten libretro build: ${_CONFLICTS_STR}")
     endif()
 
     # Force disable incompatible options (handles defaulted-on options)
     foreach(_opt IN LISTS _LIBRETRO_INCOMPATIBLE_OPTIONS)
         set(${_opt} OFF CACHE BOOL "Disabled for libretro" FORCE)
+    endforeach()
+endif()
+
+if(EMSCRIPTEN)
+    # Disable unsupported desktop/mobile-only features.
+    foreach(_opt IN ITEMS
+        ENABLE_SDL2 ENABLE_QT ENABLE_QT_TRANSLATION ENABLE_QT_UPDATE_CHECKER
+        ENABLE_WEB_SERVICE ENABLE_SCRIPTING ENABLE_OPENAL ENABLE_ROOM
+        ENABLE_ROOM_STANDALONE ENABLE_CUBEB ENABLE_LIBUSB ENABLE_OPENGL
+        ENABLE_VULKAN ENABLE_SOFTWARE_RENDERER ENABLE_TESTS ENABLE_LTO
+        ENABLE_NATIVE_OPTIMIZATION ENABLE_SSE42 CITRA_USE_PRECOMPILED_HEADERS)
+        set(${_opt} OFF CACHE BOOL "Disabled for Emscripten" FORCE)
     endforeach()
 endif()
 
