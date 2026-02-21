@@ -76,7 +76,30 @@ The Flatpak build of Azahar also has native Wayland support disabled by default.
 
 # Build instructions
 
-Please refer this repository's [wiki](https://github.com/azahar-emu/azahar/wiki/Building-From-Source) for build instructions
+Please refer this repository's [wiki](https://github.com/azahar-emu/azahar/wiki/Building-From-Source) for general build instructions.
+
+### WebAssembly (Emscripten, libretro core)
+
+WebAssembly builds are currently configured as libretro-only builds. A minimal flow looks like this:
+
+```bash
+git clone --recursive https://github.com/azahar-emu/azahar.git
+cd azahar
+
+# If you already cloned without submodules
+git submodule update --init --recursive
+
+# Activate emsdk in your shell
+source /path/to/emsdk/emsdk_env.sh
+
+emcmake cmake -S . -B build-wasm \
+  -DENABLE_LIBRETRO=ON
+cmake --build build-wasm -j
+```
+
+Notes:
+- `ENABLE_LIBRETRO` is forced on for Emscripten builds.
+- A full checkout (including submodules such as `externals/*` and `dist/compatibility_list`) is required for configure to succeed.
 
 # How can I contribute?
 
